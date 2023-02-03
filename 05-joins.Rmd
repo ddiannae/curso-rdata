@@ -1,0 +1,140 @@
+# Uniendo datasets
+
+Cuando realizamos un análisis para un proyecto de investigación,
+comúnmente necesitaremos datos de más de una tabla, y las relaciones 
+entre dicha información será importante. 
+
+Para unir dos tablas, necesitamos que estas tengan una o más 
+variables en común y además, tenemos que saber de qué forma 
+queremos relacionar nuestros datos o qué tipo de *join* usaremos.
+Existen tres familias principales: 
+
+- Uniones para mutar o *Mutating joins*: agregan las variables 
+de un data frame a otro dadas las observaciones coincidentes.
+- Uniones para filtrar o *Filtering joins*: filtran las observaciones
+de un data frame dependiendo si coinciden, o no, con las observaciones 
+en el otro data frame. 
+- Operaciones de conjuntos: las observaciones se manejan como si fueran 
+conjuntos.
+
+
+## Uniones para mutar
+
+Los *mutating joins* nos sirven para incrementar nuestro número de 
+variables en un data frame, por lo tanto, lo mutan. La elección del 
+*join* que queremos usar, depende de las observaciones que deseamos 
+preservar. En dplyr existen cuatro tipos de *mutating joins*: 
+
+- `left_join()`: preserva todas las observaciones y variables 
+del primer data frame y añade las variables del segundo en las observaciones
+donde encuentra coincidencias. Si una observación del primer data frame 
+no tiene coincidencia en el segundo, las variables se añadirán con valores 
+`NA`.
+- `right_join()`: La contraparte del `left_join()`. Aquí se preservan
+todas las observaciones del segundo data frame. 
+- `inner_join()`: solamente preserva las observaciones que coinciden 
+en ambos data frames añadiendo las variables de ambos. 
+- `full_join()`: Se preservan todas las observaciones en ambos data frames. 
+
+En las imagen, las observaciones coincidentes en los data frames están 
+están unidas por una línea. 
+
+![Tipos de *joins*. Imagen tomada de: *Joining Data in R with dplyr* @surles2017](img/joins.png){width=60%}
+
+### *Left join* 
+
+Si leemos las matrices de expresión genética, podemos unir las anotaciones
+de los genes presentes mediante un *join*.
+
+```{r message=FALSE}
+library(vroom)
+
+gene_annot <- vroom::vroom("data/colon-annotation.tsv")
+gene_expr <- vroom::vroom("data/colon-normalizado-cancer.tsv",
+                          col_select = 1:6)
+
+head(gene_annot)
+head(gene_expr)
+```
+La columna `gene_id` del tibble `gene_annot` coincide con la columna 
+`gene` del tibble `gene_expr`, por lo tanto, podemos unirlas. Usamos un 
+`left_join()`, para asegurarnos de que no perdemos ninguna fila del 
+dataset de expresión. Solamente elegiremos algunas columnas del dataset de 
+anotaciones.
+
+
+```{r}
+gene_expr %>%
+  dplyr::left_join(
+    gene_annot %>% 
+      dplyr::select(gene_id, chr, gene_name),
+    by=c("gene" = "gene_id")
+  )
+
+```
+
+### *Inner join* {#innerj}
+
+Para analizar si hay una correlación entre el número de estudiantes 
+en las instituciones de educación superior con el total de habitantes
+por municipio, podemos hacer un *join* entre el resumen obtenido 
+en el ejemplo *Obtener el número de estudiantes de educación superior en cada municipio por grado académico y sexo* \@ref(ejanuies) y el dataset de población
+
+```{r message=FALSE}
+head(estud_by_mun_sexo)
+head(poblacion)
+
+```
+
+Estos dataframes podrían unirse por nombres de municipios con la columna 
+`municipality` de `estud_by_mun_sexo` y `nom_mun` de `poblacion`. Sin embargo, 
+no podemos asegurar que los municipios estén escritos exactamente igual.
+Por lo tanto, es conveniente crear un id utilizando las columnas `entidad` y 
+`mun` para igualar la columna `municipality_id`. 
+
+```{r}
+poblacion <- poblacion %>%
+  dplyr::mutate(id = paste0(entidad, mun))
+
+estud_by_mun_sexo <- estud_by_mun_sexo %>%
+  dplyr::mutate(municipality_id = ifelse(nchar(municipality_id) == 4, 
+                                          paste0("0", municipality_id), municipality_id))
+```
+
+Y utilizamos el `inner_join()` para unir los datasets. Solamente tomaremos la variable 
+`pob15_64` ya que es la edad donde preferentemente serían estudiantes de educación
+superior
+
+```{r}
+estud_by_mun_sexo_pob <- estud_by_mun_sexo %>%
+   dplyr::inner_join(
+    poblacion %>% 
+      dplyr::select(id, pob15_64),
+    by = c("municipality_id" = "id")
+  )
+
+vroom::vroom_write(estud_by_mun_sexo, "data/estud_by_mun_sexo_pob.tsv")
+```
+
+### *Full join*¨{#fulj}
+
+Podemos investigar si hay una correlación entre el número de universidades 
+con el número de hospitales en los municipios y para eso tenemos que ejecutar un 
+`full_join()` ya que podría haber municipios donde no hay instituciones de 
+salud pero sí instituciones de educación superior y viceversa.
+
+Ambos dataframes contienen la variable `total` para definir el total de instituciones. 
+Es por eso que utilizamos el parámetro `suffix` para renombrar las nuevas variables. 
+Además, reemplazamos los valores `NA`, de las observaciones no coincidentes con 0.
+
+```{r}
+anuies_hosp <- anuies_by_mun %>%
+  dplyr::full_join(hospitales_by_mun, 
+                    by = c("municipality_id", "municipality", "state"), 
+                    suffix = c("_anuies", "_hospitales")) %>%
+  replace(is.na(.), 0)
+
+vroom_write(anuies_hosp, "data/anuies_hosp.tsv")
+```
+
+

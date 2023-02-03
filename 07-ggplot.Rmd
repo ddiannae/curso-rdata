@@ -1,0 +1,191 @@
+# Visualizaciones con ggplot
+
+En este capítulo revisaremos las principales funcionalidades del 
+paquete ggplot y sus paquetes asociados para construir visualizaciones
+de nuestros datos.
+
+```{r message=FALSE}
+library(ggplot2)
+library(ggpubr)
+library(ggthemes)
+library(scales)
+```
+
+## Distribuciones
+
+
+Una forma sencilla de conocer la distribución de nuestros datos es obtener su gráfica 
+de densidad, que es una representación suavizada de un histograma. Para conocer la 
+distribución del total de población por municipio:
+
+```{r}
+ggplot(data = poblacion, aes(x=pobtot)) +
+  geom_density()
+```
+
+La distribución está altamente sesgada, es decir, hay muchos municipios con pocos habitantes
+y algunos municipios donde dicha cantidad es muy grande. 
+
+Podemos revisar la distribución de población por estado utilizando boxplots. Cambiaremos las 
+leyendas de los ejes y, para lograr que las etiquetas del eje `x` puedan leerse, las rotaremos
+y las ajustaremos.
+
+```{r}
+ggplot(poblacion, aes(x=nom_ent, y=pobtot)) +
+  geom_boxplot() +
+  ylab("Población") +
+  xlab("") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+También podemos utilizar un histograma para observar, por ejemplo, la distribución de la población infantil
+en los municipios del estado de Veracruz. Ajustamos número de bins para mejorar la resolución de visualización 
+de los datos. Nuevamente cambiaremos los nombres de los ejes. Además, modificaremos el tema por default 
+utilizado por ggplot, el tamaño de la fuente y añadiremos una línea vertical para 
+identificar la media de la distribución. La escala del eje `x` ha sido modificada con la función comma del paquete
+scales. 
+
+```{r}
+poblacion %>%
+  dplyr::filter(nom_ent == "Veracruz") %>%
+ggplot(aes(x=pob0_14)) +
+  geom_histogram(bins=50, fill="white", color="black")  +
+   geom_vline(aes(xintercept=mean(pob0_14)),
+            color="blue", linetype="dashed", size=1) +
+  xlab("Población") +
+  ylab("Frecuencia") +
+  scale_x_continuous(label=comma) +
+  ggtitle("Distribución de la población infantil en Veracruz") +
+  theme_classic(base_size = 15) 
+```
+Podemos comparar dos distribuciones. Por ejemplo, los estudiantes de las instituciones de educación superior. 
+Primero agrupamos por estado para tener menos puntos y obtenemos la media y la desviación estándar
+
+```{r message=FALSE}
+estud_by_mun_sexo <- vroom("data/estud_by_mun_sexo.tsv")
+
+estud_by_est_sexo <- estud_by_mun_sexo %>%
+  filter(academic_degree %in% c("Maestría", "Doctorado")) %>%
+  group_by(sex, state) %>%
+  summarise(total = sum(estudiantes))
+
+```
+
+Podemos comparar las distribuciones con boxplots
+```{r fig.width=8}
+ggplot(estud_by_est_sexo, aes(x = sex, y = total)) +
+  geom_boxplot(width = 0.5, alpha = 0.8, color = "grey") +
+  geom_jitter(width = 0.1, size = 1, color = "deeppink3") +
+  xlab("") +
+  ylab("Estudiantes en Posgrado") +
+  theme_bw(base_size = 18) +
+  stat_compare_means(method = "wilcox.test")
+
+```
+
+O con violin plots
+```{r fig.width=8}
+ggplot(estud_by_est_sexo, aes(x = sex, y = total)) +
+  geom_violin(width = 0.5, alpha = 0.8, color = "grey") +
+  geom_jitter(width = 0.1, size = 1, color = "deeppink3") +
+  xlab("") +
+  ylab("Estudiantes en Posgrado") +
+  theme_bw(base_size = 18) +
+  stat_compare_means(method = "wilcox.test")
+```
+
+O también graficar las medias y la desviación estándar
+```{r fig.width=8}
+est_sexo_sum <- estud_by_est_sexo %>%
+  group_by(sex) %>%
+  summarise(mean = mean(total), 
+            sd = sd(total)/5) 
+
+
+ggplot(est_sexo_sum, aes(x = sex, y = mean, color = sex)) +
+  geom_bar(stat="identity", fill='white') +
+  geom_errorbar(aes(ymin= mean-sd, ymax=mean+sd), width=.2) +
+  ylab("Promedio de estudiantes en Posgrado") +
+  xlab("") +
+  scale_color_brewer(palette = "Dark2") +
+  theme_bw(base_size = 18) + 
+  theme(legend.position="none")
+```
+
+
+## Barras
+
+Utilizaremos el summary que creamos con las unidades de salud por tipo de servicio, 
+para construir una gráfica de barras
+La función `scale_fill_stata()` nos permite usar la paleta de colores stata. 
+
+```{r fig.width=10}
+ ggplot(hospitales_by_mun_serv, aes(x = state, fill = establishment_type)) +
+  geom_bar() +
+  labs(x = "Estado", y = "Total de unidades", title = "Unidades de salud por tipo de servicio") +
+  scale_fill_stata(name = "") +
+  theme_clean()  + 
+  theme(axis.text.x=element_text(angle = 90, hjust = 1, vjust = 0.5),
+        legend.position = "bottom", legend.direction = "horizontal") 
+
+```
+
+Para crear una gráfica independiente para cada uno de los estados, 
+podemos utilizar la función `facet_wrap()`
+
+```{r fig.height=15,fig.width=10}
+ ggplot(hospitales_by_mun_serv, aes(x = establishment_type, fill = establishment_type)) +
+    geom_bar() +
+    labs(x = "Estado", y = "Total de unidades", title = "Unidades de salud por tipo de servicio") +
+    scale_fill_stata(name = "") +
+    theme_clean(base_size = 18) + 
+    theme(axis.text.x=element_text(angle = 90, hjust = 1, vjust = 0.5),
+          legend.position = "bottom", legend.direction = "horizontal") +
+    facet_wrap(~state)
+```
+
+
+## Dot plots
+
+Creamos una gráfica de puntos utilizando el dataset que formamos en *Full join* \@ref(fulj) Y
+agregamos también el total de población como en \@ref(innerj). 
+
+```{r fig.width=10}
+
+anuies_hosp_pob <- anuies_hosp %>%
+   dplyr::inner_join(
+    poblacion %>% 
+      dplyr::select(id, pobtot),
+    by = c("municipality_id" = "id")
+  )
+
+ggplot(anuies_hosp_pob, aes(x=total_anuies, y=total_hospitales)) +
+  geom_point(aes(size=pobtot, color=pobtot)) +
+  geom_abline(color="green") +
+  xlab("Total de instituciones de educación superior") +
+  ylab("Total de unidades de salud") +
+  ggtitle("Instituciones de Educación Superior vs Unidades de Salud") +
+  scale_color_continuous(name="Población", label=comma) +
+  scale_size(guide = 'none') +
+  theme_base(base_size = 15) +
+  theme(legend.text.align = 1)
+
+```
+
+## Heatmap
+
+Finalmente construiremos un heatmap con los datos de la población de Quintana Roo
+por edades en los municipios para observar su agrupamiento
+
+```{r}
+pob_ent <- poblacion %>%
+  filter(nom_ent == "Quintana Roo") %>%
+  select(nom_mun, pob0_14, pob15_64, pob65_mas) 
+
+pob_ent_matrix <- pob_ent %>% 
+  select(-nom_mun) %>%
+  as.matrix()
+rownames(pob_ent_matrix) <- pob_ent$nom_mun
+colnames(pob_ent_matrix) <- c("Menores de 15", "De 15 a 65", "Mayores de 65")
+pheatmap::pheatmap(pob_ent_matrix)
+
+```

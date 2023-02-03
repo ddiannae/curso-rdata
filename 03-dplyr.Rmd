@@ -1,0 +1,252 @@
+# Transformando nuestros datos
+
+Con las herramientas que ya conocemos podemos obtener información sobre nuestros datos. 
+Por ejemplo, si importamos la información del  [Censo de población y vivienda 2020](https://www.inegi.org.mx/programas/ccpv/2020/#Datos_abiertos){target="_blank"} del INEGI 
+
+Podemos conocer la población total del país, el porcentaje de población femenina, 
+el promedio, desviación estándar u otros estadísticos de la población de entre
+15 y 65 años en municipios del país, 
+si es menor el número de niños de menos de 15 años que el número de adultos de más
+de 65, etc.
+
+```{r}
+# Población total
+total <- poblacion$pobtot %>% sum() 
+total
+ # Porcentaje de población femenina
+(poblacion$pobfem %>% sum())/total * 100
+# Promedio de personas de entre 15 y 65 en los municipios
+poblacion$pob15_64 %>% mean() 
+# Es menor la población de menos de 15 años que la de más de 65?
+poblacion$pob0_14 %>% sum() < poblacion$pob65_mas %>% sum() 
+```
+Sin embargo, si queremos realizar manipulaciones, el paquete `dplyr` contiene varias funciones, 
+llamadas comúnmente verbos, que nos permitirán realizar todo tipo de transformaciones en nuestros datos. 
+
+Los principales verbos son:
+
+- `filter()` para elegir observaciones basadas en sus valores
+- `select()` para elegir variables por sus nombres
+- `arrange()` para reordenar las filas
+- `mutate()` para crear nuevas variables aplicando funciones a las variables ya existentes
+- `summarise()` para condensar muchos valores en uno. 
+
+Además, estos verbos pueden combinarse con la función `group_by()` para que las operaciones no se ejecuten 
+en todo el dataset sino grupo por grupo. Además, todos los verbos funcionan de forma similar: toman como primer 
+argumento un dataframe, después se describe qué se hace con las variables y el resultado es un nuevo 
+dataframe. Por lo tanto, funcionan muy bien con los pipes `%>%`
+
+## Filter
+
+Con `filter()` podemos obtener un subconjunto de las observaciones basadas en sus valores. Por ejemplo, 
+para obtener lainformación solamente de los municipios del estado de Aguascalientes
+
+```{r message=FALSE}
+library(dplyr)
+
+dplyr::filter(poblacion, nom_ent == "Aguascalientes")
+
+poblacion %>%
+  dplyr::filter(nom_ent == "Aguascalientes")
+```
+No es necesario el uso del pipe, ya que los verbos de `dplyr` son funciones de R. Sin embargo, 
+comúnmente usaremos múltiples verbos en un pipe y por eso es bueno acostumbrarnos a su uso. Además, 
+permiten concatenar otro tipo de operaciones. Por ejemplo, si queremos obtener el total de la población 
+de los estados del Bajío: Aguascalientes, Guanajuato, Querétaro, San Luis Potosí y Zacatecas, podemos lograrlo con:
+
+```{r}
+bajio <- c("Aguascalientes", "Guanajuato", "Querétaro", "San Luis Potosí", "Zacatecas")
+
+poblacion %>%
+  dplyr::filter(nom_ent %in% bajio) %>%
+  dplyr::pull(pobtot) %>% 
+  sum()
+
+```
+`dplyr::pull` es una función que nos permite extraer los valores de una variable, de manera similar a 
+`$`, pero su formato nos permite añadirla en pipes. 
+
+Podemos filtrar cualquier tipo de variable, por ejemplo, para obtener los municipios con más 
+de 1 millón de habitantes
+
+```{r}
+poblacion %>%
+  dplyr::filter(pobtot > 1000000) 
+```
+## Select
+
+Con `select()` podemos elegir subconjuntos de variables o columnas de nuestro dataset. 
+
+para elegir el nombre del municipio y la población total
+
+```{r}
+poblacion %>% 
+   dplyr::select(nom_mun, pobtot) %>%
+  head()
+```
+El dataset original se mantiene sin cambios ya que los verbos regresan un nuevo dataframe.
+También es posible quitar columnas con selección negativa.
+
+```{r}
+poblacion %>% 
+   dplyr::select(-c(pob0_14, pob15_64, pob65_mas))
+```
+
+Y renombrar y reordenar las columnas
+
+```{r}
+poblacion %>% 
+   dplyr::select(id_mun = mun, municipio = nom_mun,  estado = nom_ent)
+```
+Además, la función `everything()` selecciona las columnas restantes. 
+
+```{r}
+poblacion %>% 
+   dplyr::select(id_mun = mun, municipio = nom_mun,  
+         estado = nom_ent, everything(), -mun, -entidad)
+```
+## Arrange 
+
+Con la función `arrange()` podemos ordenar las filas de acuerdo a alguna de las variables. Por ejemplo, ordenar
+los municipios de menor a mayor población para los municipios con más de 10 mil habitantes.
+
+```{r}
+poblacion %>% 
+  dplyr::filter(pobtot > 10000) %>%
+  dplyr::arrange(pob0_14) %>%
+  dplyr::select(municipio = nom_mun, entidad = nom_ent, poblacion_infantil = pob0_14)
+```
+También es posible ordenar de forma descendente, por ejemplo, los municipios con más de un millón
+de habitantes y seleccionar solamente los primeros tres con la función `slice_head()`
+
+```{r}
+poblacion %>%
+  dplyr::filter(pobtot > 1000000) %>%
+  dplyr::arrange(desc(pobtot)) %>%
+  dplyr::slice_head(n = 3)
+```
+## Mutate
+
+Con la función `mutate()` podemos generar nuevas variables a partir de las ya existentes. 
+Por ejemplo, obtener la fracción de población de mujeres y hombres y con ella seleccionar
+los municipios con más hombres que mujeres y ordenar por población total.
+
+
+```{r}
+poblacion %>%
+  dplyr::mutate(fracc_fem = pobfem/pobtot, 
+                fracc_mas = 1 - fracc_fem) %>%
+  dplyr::select(nom_ent, nom_mun, pobtot, pobfem, fracc_fem, fracc_mas) %>%
+  dplyr::filter(fracc_mas > fracc_fem) %>%
+  dplyr::arrange(desc(pobtot))
+```
+O modificar los valores de una variable que ya existe. Por ejemplo, si obtenemos los valores de los 
+nombres de los estados. 
+
+```{r}
+poblacion %>% 
+  dplyr::pull(nom_ent) %>%
+  unique()
+```
+Podemos cambiar los de Coahuila, Michoacán o Veracruz, por sus nombres más cortos y comunes y
+sobre escribir el data frame para posteriores usos.
+
+```{r}
+poblacion <- poblacion %>% 
+  dplyr::mutate(nom_ent = replace(nom_ent, nom_ent == "Michoacán de Ocampo", "Michoacán"),
+                nom_ent = replace(nom_ent, nom_ent == "Veracruz de Ignacio de la Llave", "Veracruz"),
+                nom_ent = replace(nom_ent, nom_ent == "Coahuila de Zaragoza", "Coahuila"))
+
+poblacion %>%
+  dplyr::pull(nom_ent) %>% unique()
+
+vroom::vroom_write(poblacion, "data/poblacion.tsv")
+```
+
+## Summarise
+
+Con `summarise()` podemos agrupar diversos valores y aplicar una función para obtener un resumen 
+que condense los valores. Para eso, agrupamos dada una variable. Por ejemplo, para obtener las poblaciones
+totales por estado
+
+```{r}
+poblacion %>% 
+  dplyr::group_by(nom_ent) %>%
+  dplyr::summarise(pobtot = sum(pobtot))
+```
+Y para aplicar la misma función a diferentes variables o columnas sin repetir mucho 
+código, se puede utilizar la función `across()`.
+```{r}
+poblacion %>% 
+  dplyr::group_by(nom_ent) %>%
+  dplyr::summarise(dplyr::across(c(pobtot, pobfem, pob0_14, pob15_64, pob65_mas), mean)) %>%
+  head(3)
+```
+A `across()` le podemos especificar
+las columnas a resumir o también podemos seleccionarlas de acuerdo a su nombre o a su 
+tipo de datos, usando selectores de tidyselect. 
+
+
+```{r}
+poblacion %>% 
+  dplyr::group_by(nom_ent) %>%
+  dplyr::summarise(dplyr::across(starts_with("pob"), mean)) %>%
+  head(3)
+```
+
+```{r}
+poblacion %>% 
+  dplyr::group_by(nom_ent) %>%
+  dplyr::summarise(dplyr::across(where(is.double), mean)) %>%
+  head(3)
+```
+
+El resultado es el mismo, pero seleccionamos las columnas deseadas de diferente forma, 
+lo cual puede ser útil si tenemos dataframes muy grandes. 
+
+Existen un par de funciones en dplyr que nos permiten hacer un agregado rápido y sencillo
+en nuestros datos. Con `count()` podemos contar los valores únicos de una o más variables y 
+`tally()` logra lo mismo, pero nosotros tenemos que especificar el agrupamiento. Por ejemplo, 
+en el dataset de población, contando las apariciones de cada estado, estaríamos contando 
+el número de municipios de cada estado que aparecen en el censo del INEGI. 
+
+```{r}
+poblacion %>%
+  count(nom_ent, sort = TRUE)
+
+poblacion %>%
+  group_by(nom_ent) %>%
+  tally(sort = TRUE)
+```
+Ambos resultados son iguales y al usar la opción `sort=TRUE`, los resultados aparecen 
+ordenados de forma descendente. Estas funciones utilizan hacen uso de la función `n()`
+para contar los valores únicos y también podemos utilizarla, en conjunto con otras 
+funciones en nuestro resumen.
+
+
+```{r}
+poblacion %>%
+  group_by(nom_ent) %>%
+  summarise(pobtot = sum(pobtot), 
+            municipios = n()) %>% 
+  arrange(desc(municipios))
+```
+
+Las funciones `slice_max()` y `slice_min()` nos permiten seleccionar las filas 
+con valores máximos y mínimos dado una variable con el argumento `order_by`  
+y según el agrupamiento que hayamos elegido. 
+Por ejemplo, para obtener los municipios con mayor población total
+
+```{r}
+poblacion %>%
+  group_by(nom_ent) %>%
+  slice_max(order_by = pobtot)
+```
+
+O para obtener los dos municipios con menos población en cada estado
+
+```{r}
+poblacion %>%
+  group_by(nom_ent) %>%
+  slice_min(order_by = pobtot, n = 2)
+```

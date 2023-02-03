@@ -1,0 +1,20 @@
+book_filename: "curso-rdata"
+language:
+  label:
+    fig: 'Figura '
+    tab: 'Tabla '
+    eq: 'Ecuación '
+    thm: 'Teorema '
+    lem: 'Lema '
+    def: 'Definición '
+    cor: 'Corolario '
+    prp: 'Proposición '
+    exm: 'Ejemplo '
+    exr: 'Ejercicio '
+    proof: 'Demostración. '
+    remark: 'Nota: '
+    solution: 'Solución. '
+  ui:
+    chapter_name: 'Capítulo '
+    ref_name: 'Referencias'
+delete_merged_file: yes

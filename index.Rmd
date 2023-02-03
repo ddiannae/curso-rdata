@@ -1,0 +1,28 @@
+--- 
+title: "Curso: R para análisis de datos"
+author: "Diana García Cortés"
+date: "Agosto, 2022"
+site: bookdown::bookdown_site
+output: bookdown::gitbook
+documentclass: book
+bibliography: [book.bib, packages.bib]
+csl: ieee.csl
+link-citations: yes
+github-repo: ddiannae/curso-rdata
+description: "Contenido del curso: R para análisis de datos"
+---
+
+# Presentación
+
+![Curso R para análisis de datos, para mujeres](img/logo_cursor.png)
+
+Este libro contiene las notas desarrolladas para acompañar el curso de "R para análisis
+de datos", para mujeres. Pretende ser un compendio de anotaciones de los temas tratados, con la 
+finalidad de que las participantes cuenten con material de apoyo y consulta. No pretende
+ser una fuente exhaustiva sobre el uso de los paquetes de tidyverse ya que para eso existen 
+excelentes recursos como: *R for Data Science* @wickham2016r y su versión en español: 
+*R para ciencia de datos* @wickham2016esp.
+
+Este contenido se encuentra **en construcción**.
+
+
