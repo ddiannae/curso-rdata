@@ -159,8 +159,11 @@ poblacion <- poblacion %>%
 
 poblacion %>%
   dplyr::pull(nom_ent) %>% unique()
+```
 
-vroom::vroom_write(poblacion, "data/poblacion.tsv")
+Con las funciones `write_tsv` o `write_csv` podemos exportar lo tibbles resultantes a un archivo de texto plano separado por tabs o comas. 
+```{r}
+readr::write_tsv(poblacion, "data/poblacion.tsv")
 ```
 
 ## Summarise

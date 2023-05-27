@@ -1,15 +1,14 @@
 # Comenzando con tidyverse
 
-Tidyverse es una colección de paquetes de R diseñados para ciencia de datos. Todos comparten
-una misma filosofía, gramática y estructura de datos lo que facilita su uso. Además, cada uno
-contiene funciones para realizar tareas concretas. Por ejemplo: `tidyr` contiene funciones para 
-obtener tidy datasets, `dplyr` permite manipular datos, `readr` leer datos tabulares, etc. Una 
-descripción completa de los paquetes puede encontrarse en: [https://www.tidyverse.org/packages/](https://www.tidyverse.org/packages/){target="_blank"}. 
+Tidyverse es una colección de paquetes de R diseñados para ciencia de datos. Todos comparten una misma filosofía, gramática y estructura de datos lo que facilita su uso. 
+
+Además, cada uno contiene funciones para realizar tareas concretas. Por ejemplo: `tidyr` contiene funciones paraobtener tidy datasets, `dplyr` permite manipular datos, `readr` leer datos tabulares, etc.
+
+Una descripción completa de los paquetes puede encontrarse en: [https://www.tidyverse.org/packages/](https://www.tidyverse.org/packages/){target="_blank"}. 
 
 ## Tidy data
 
-Uno de los puntos principales en la filosofía de los paquetes de tidyverse es que se trabaja con 
-datasets tidy. Esto significa que cumplen las siguientes tres reglas interconectadas:
+Uno de los puntos principales en la filosofía de los paquetes de tidyverse es que se trabaja con datasets tidy. Esto significa que cumplen las siguientes tres reglas interconectadas:
 
 1. Cada variable está en contenida en una columna.
 2. Cada observación se encuentra en una fila. 
@@ -59,44 +58,59 @@ mi_tbl
 
 ## Importando datos
 
-El paquete `readr`, con sus funciones `read_csv` o `read_tsv` es comúnmente utilizado para importar
-archivos con datos a tibbles en R. Sin embargo, el paquete `vroom` realiza la lectura de grandes
+El paquete `readr`, con sus funciones `read_csv` o `read_tsv` es comúnmente utilizado para importar archivos con datos a tibbles en R. Sin embargo, el paquete `vroom` realiza la lectura de grandes
 cantidades de datos con mayor rapidez. 
 
 ```{r}
-library(vroom)
-```
-
-Para leer datos solamente ejecutamos la función `vroom()`
-
-```{r message=FALSE}
-anuies <- vroom::vroom("data/anuies.tsv")
-anuies
-```
-Especificar el tipo de datos de alguna variable es útil cuando lo sabemos previamente. `vroom` y `readr`
-leen los primeros mil valores para asignar el tipo de datos. Por ejemplo, cuando tenemos una columna 
-asignada a los cromosomas. Sin embargo, para esta especificación requerimos el paquete `readr`
-
-```{r message=FALSE}
 library(readr)
-colon_annot <- vroom::vroom("data/colon-annotation.tsv", 
-                            col_types = cols(chr = col_character()))
-colon_annot
 ```
-Además, este mismo argumento nos permite seleccionar solo un subconjunto de columnas para importarlas. 
+
+Para leer datos solamente ejecutamos la función `vroom()`. Tenemos que asegurarnos de indicar la ruta correcta a partir de nuestro directorio de trabajo. En este caso los scripts están en el working directory y el archivo a leer se encuentra dentro de una carpeta llamada data
 
 ```{r message=FALSE}
-
-colon_annot <- vroom::vroom("data/colon-annotation.tsv", 
-                            col_types = cols_only(ensembl_id = col_character(), 
-                                                  chr = col_character(),
-                                                  start = col_double(), 
-                                                  end = col_double(), 
-                                                  gene_name = col_character()))
-colon_annot
+poblacion <- read_tsv("data/poblacion.tsv")
 ```
 
-La especificación completa sobre los tipos de columnas puede encontrarse en: [Create column specification](https://readr.tidyverse.org/reference/cols.html){target="_blank"}.
+Observando las primeras entradas en el dataset nos aseguramos 
+de que éste se cargó correctamente.
+
+```{r}
+head(poblacion)
+colnames(poblacion)
+```
+
+Si queremos obtener las entradas de una de las columnas, es decir
+extraer el vector asociado a esa columna, podemos hacerlo con 
+el signo `$`, similar a la sintaxis de las listas.
+
+```{r}
+nom_ents <- poblacion$nom_ent
+```
+
+
+<!-- Especificar el tipo de datos de alguna variable es útil cuando lo sabemos previamente. `vroom` y `readr` leen los primeros mil valores para asignar el tipo de datos. Por ejemplo, cuando tenemos una columna  -->
+<!-- asignada a los cromosomas. Sin embargo, para esta especificación requerimos el paquete `readr` -->
+
+<!-- ```{r message=FALSE} -->
+<!-- library(readr) -->
+<!-- colon_annot <- vroom::vroom("data/colon-annotation.tsv",  -->
+<!--                             col_types = cols(chr = col_character())) -->
+<!-- colon_annot -->
+<!-- ``` -->
+<!-- Además, este mismo argumento nos permite seleccionar solo un subconjunto de columnas para importarlas.  -->
+
+<!-- ```{r message=FALSE} -->
+
+<!-- colon_annot <- vroom::vroom("data/colon-annotation.tsv",  -->
+<!--                             col_types = cols_only(ensembl_id = col_character(),  -->
+<!--                                                   chr = col_character(), -->
+<!--                                                   start = col_double(),  -->
+<!--                                                   end = col_double(),  -->
+<!--                                                   gene_name = col_character())) -->
+<!-- colon_annot -->
+<!-- ``` -->
+
+<!-- La especificación completa sobre los tipos de columnas puede encontrarse en: [Create column specification](https://readr.tidyverse.org/reference/cols.html){target="_blank"}. -->
 
 La recomendación para nombres de columnas sigue la de nombre de variables en R, *snake case* y la función `clean_names()` 
 del paquete `janitor` lo hace de forma automática. 
@@ -133,8 +147,5 @@ sample(1:100, size = 7) %>%
   mean()
 ```
 
-Aunque son una herramienta poderosa, no podrán ser usados en todos los casos. En particular, debemos 
-evitar su uso si las funciones dentro del pipe tienen múltiples entradas y múltiples salidas, ya que los pipes se 
-usan cuando es un solo objeto el que está siendo transformado. 
-Además, si se concatena un gran número de operaciones, se recomienda crear objetos intermedios, para 
-que nuestro código sea fácil de leer. 
+Aunque son una herramienta poderosa, no podrán ser usados en todos los casos. En particular, debemos  evitar su uso si las funciones dentro del pipe tienen múltiples entradas y múltiples salidas, ya que los pipes se usan cuando es un solo objeto el que está siendo transformado. 
+Además, si se concatena un gran número de operaciones, se recomienda crear objetos intermedios, para que nuestro código sea fácil de leer. 

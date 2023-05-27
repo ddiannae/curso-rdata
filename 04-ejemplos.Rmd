@@ -3,6 +3,8 @@
 Esta sección contiene más ejemplos del uso de los verbos de dplyr. Cada resultado se guardará en un
 nuevo archivo tsv para su uso posterior. 
 
+En este caso utilizaremos el paquete `vroom` para leer y escribir datos.
+
 ```{r message=FALSE}
 library(vroom)
 library(dplyr)
@@ -11,10 +13,10 @@ library(janitor)
 
 ## Dataset de ANUIES 
 
-Leemos el dataset de la Asociación Nacional de Universidades e Instituciones de Educación Superior y 
-cambiamos las variables de `id` a caracteres. 
+Leemos el dataset de la Asociación Nacional de Universidades e Instituciones de Educación Superior y cambiamos las variables de `id` a caracteres. 
 
 ```{r message=FALSE}
+anuies <- vroom("data/anuies.tsv")
 anuies <- anuies %>%
   mutate(municipality_id = as.character(municipality_id), 
          state_id = as.character(state_id))

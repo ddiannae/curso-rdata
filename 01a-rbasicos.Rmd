@@ -1,0 +1,495 @@
+## Vectores
+### Declarando vectores
+Para crear una variable que contiene múltiples valores requerimos la función de concatenación o `c()`. Esta función toma como argumentos los valores que queremos concatenar y crea un objeto o una estructura de datos llamada vector. 
+
+```{r}
+numeros <- c(45, 38, 90, 5, 20, 3)
+```
+
+También podemos crear vectores numéricos que contengan una secuencia de números enteros con el operador `:`
+
+```{r results='hide'}
+enteros <- 23:31
+# [1] 23 24 25 26 27 28 29 30 31
+enteros_back <- 45:39
+# [1] 45 44 43 42 41 40 39
+```
+
+O utilizando la función `seq()`, en donde definimos el valor de inicio, el valor final y el incremento que requerimos
+
+```{r results='hide'}
+secuencia <- seq(from = 1.5, to = 3.75, by = 0.25)
+# [1] 1.50 1.75 2.00 2.25 2.50 2.75 3.00 3.25 3.50 3.75
+```
+
+Además, existe la función `rep()` con la cual podemos repetir valores un cierto número de veces. 
+
+```{r results='hide'}
+repeticiones <- rep(5, times = 5)
+# [1] 5 5 5 5 5
+repeticiones_str <- rep("hi", times = 3)
+# [1] "hi" "hi" "hi"
+repeticiones_vec <- rep(c(2, 12, 22, 32, 42), times = 2)
+# [1]  2 12 22 32 42  2 12 22 32 42
+```
+
+Cuando el primer argumento de la función `rep()` es un vector, podemos especificar que cada uno de los elementos en el vector se repita `each` veces
+
+```{r results='hide'}
+repeticiones_each <- rep(c(1, 4, 6), each = 4)
+#  [1] 1 1 1 1 4 4 4 4 6 6 6 6
+repeticiones_mn <- rep(numeros, each = 2)
+# [1] 45 45 38 38 90 90  5  5 20 20  3  3
+```
+
+Al ser de una sola dimensión, los vectores solamente tienen longitud, y la podemos conocer 
+con la función `length()`
+```{r}
+length(numeros)
+```
+
+### Accesando a los valores
+
+Podemos extraer valores de un vector mediante sus índices. Es importante recordar que en R los índices comienzan en 1. 
+
+```{r results='hide'}
+numeros
+# [1] 45 38 90  5 20  3
+numeros[3]
+# [1] 90
+numeros[2:5]
+# [1] 2 3 4 5
+numeros[c(1, 4, 6)]
+# [1] 45  5  3
+```
+
+Otra de las características más importantes del lenguaje de programación R es que **las operaciones están vectorizadas**; es decir, no es necesario recorrer un arreglo para realizar sumas u otras operaciones ya que  las operaciones se aplican a cada uno de sus elementos. 
+
+```{r results='hide'}
+numeros * 3
+# [1] 135 114 270  15  60   9
+numeros + 5
+# [1] 50 43 95 10 25  8
+numeros + c(1,4)
+# [1] 46 42 91  9 21  7
+```
+
+La última operación logra sumar cada elemento de los valores de dos arreglos ya que uno tiene un tamaño que es múltiplo del otro. Si intentamos esta operación para tamaños no múltiplos, obtenemos un *warning*.
+
+```{r error=TRUE}
+numeros + c(1,4, 6, 8)
+```
+
+La vectorización funciona también para operaciones lógicas 
+
+```{r results='hide'}
+numeros < 10 
+# [1] FALSE FALSE FALSE  TRUE FALSE  TRUE
+numeros %% 2 == 0
+# [1] 50 43 95 10 25  8
+numeros == 90
+# [1] FALSE FALSE  TRUE FALSE FALSE FALSE
+```
+
+Y los resultados de dichas operaciones, es decir, vectores lógicos, pueden servir también para extraer valores de los arreglos.
+
+
+```{r results='hide'}
+numeros[numeros < 10]
+# [1] 5 3
+numeros[numeros %% 2 == 0]
+# [1] 38 90 20
+numeros[numeros == 90]
+# 90
+```
+
+Por ejemplo, si tenemos un arreglo de días y queremos extraer los que corresponden a los días lunes y miércoles, es posible utilizar el operador `OR` (`|`) o utilizar la función %in%.
+
+```{r}
+dias <- sample(c("lu", "ma", "mi", "ju", "vi"), 15, replace = TRUE)
+dias
+dias == "lu" | dias == "mi"
+dias %in% c("lu", "mi")
+```
+
+La función which obtiene los índices de los elementos donde el
+el resultado de la comparación es TRUE. 
+
+```{r}
+which(numeros > 20)
+```
+
+Para contar cuántos elementos resultan TRUE en la comparación, podemos obtener el tamaño del vector de índices o sumar los elementos del vector lógico resultante de la comparación, aprovechando su conversión a valores numéricos.
+
+```{r}
+length(which(numeros > 20))
+sum(numeros > 20)
+```
+
+Con la función `all` podemos saber si todos los valores pasan la comparación.
+
+```{r}
+all(numeros > 10)
+all(numeros %% 2 == 0)
+```
+Con `any` preguntamos si algunos de los valores pasan la
+comparación
+
+```{r}
+any(numeros > 15)
+any(numeros == 90)
+any(numeros == 4)
+```
+
+
+### Coerción
+
+Es muy importante considerar que los vectores son estructuras de datos homogéneas, es decir, todos sus elementos deben ser del mismo tipo. Si los elementos del vector no son del mismo tipo, 
+ocurre una coerción, en donde se asigna a todos los elementos la clase más restrictiva posible, en el orden: 
+`logical -> integer -> numeric -> character`
+
+
+```{r results='hide'}
+mis_valores <- c("rojo", 77, "blanco", 1, TRUE)
+class(mis_valores)
+# [1] "character"
+mis_valores <- c(77, FALSE, 1, TRUE)
+class(mis_valores)
+# [1] "numeric"
+```
+
+Como ya se mencionó, el valor especial lógico `NA`, especifica ausencia de datos. Por ejemplo,si intentamos acceder a un índice que no existen en un arreglo.
+
+```{r results='hide'}
+numeros[1000]
+# [1] NA
+numeros[-3]
+# [1] NA
+```
+
+Además, si tenemos un vector con valores `NA`, debemos tener cuidado al ejecutar las funciones numéricas y especificar de forma explícita que los valores `NA` no deben ser tomados en cuenta. 
+
+```{r results='hide'}
+mis_na <- c(numeros[1:3], NA, numeros[4:5])
+mean(mis_na)
+# [1] NA
+mean(mis_na, na.rm = TRUE)
+# [1] 39.6
+```
+
+Y para extraer los valores del vector que no son `NA`, se hace *subset* con la función `is.na()` para formar un vector lógico.
+
+```{r results='hide'}
+mis_na[is.na(mis_na)]
+# [1] 45 38 90  5 20
+```
+
+
+## Factores
+
+Hay otro tipo de datos, no básico, importante: los factores. Son caracteres que funcionan como 
+etiquetas y además tienen una representación numérica. 
+
+```{r results='hide'}
+grados <- factor(c("licenciatura", "maestría",  "doctorado"))
+# [1] licenciatura maestría     doctorado   
+# Levels: doctorado licenciatura maestría
+as.numeric(grados)
+# [1] 2 3 1
+```
+
+Los niveles o *levels* se asignan automáticamente en orden alfabético, aunque también podemos especificarlos 
+de forma explícita
+
+```{r results='hide'}
+levels(grados)
+# "doctorado"    "licenciatura" "maestría" 
+grados <- factor(c("doctorado", "maestría", "licenciatura"), 
+                 levels = c("licenciatura", "maestría",  "doctorado"))
+as.numeric(grados)
+# [1] 3 2 1
+```
+
+
+## Matrices y arreglos
+
+Las matrices y los arreglos son vectores con atributos adicionales llamados dimensiones. 
+Las matrices tienen dos dimensiones, formando una estructura rectangular con renglones y 
+columnas. A su vez, los arreglos tienen más de dos dimensiones. 
+
+Al igual que los vectores, las matrices y los arreglos son estructuras de datos homogéneas. 
+Es decir, solo pueden estar formadas por un tipo de datos. Comúnmente se construyen utilizando 
+la función `matrix()`, especificando el número de renglones y columnas. 
+
+```{r}
+mim <- matrix(1:15, nrow = 3, ncol = 5)
+mim2 <- matrix(1:15, nrow = 5, ncol = 3)
+```
+
+Los elementos se asignan de arriba a abajo y de izquierda a derecha. Y se pueden asignar nombres tanto 
+a los renglones como a las columnas.
+```{r}
+colnames(mim) <- c("c1", "c2", "c3", "c4", "c5")
+rownames(mim) <- c("r1", "r2", "r3")
+mim 
+```
+Para conocer las dimensiones de la matriz utilizamos la función `dim()` o podemos preguntar
+directamente por su número de filas o de columnas. 
+
+```{r results='hide'}
+dim(mim)
+# [1] 3 5
+nrow(mim)
+# [1] 3
+ncol(mim)
+# [1] 5
+```
+
+En las matrices también podemos observar las operaciones vectorizadas. Además, hay algunas funciones
+especialmente desarrolladas para trabajar con matrices. 
+
+```{r}
+mim * 3 # Operación vectorizada
+rowSums(mim) # Suma de las filas de una matriz
+colSums(mim) # Suma de las columnas de una matriz
+t(mim2) + mim # Transposición
+```
+Para construir arreglos se utiliza la función `array()`, especificando las dimensiones 
+que lo conforman. 
+
+```{r}
+mia <- array(1:16, dim = c(2, 4, 2))
+mia
+```
+
+## Listas
+
+Las listas son estructuras de datos heterogéneas, es decir, permiten almacenar 
+valores de diferentes clases y, al igual que los vectores, son de una dimensión. 
+Se crean a partir de la función `list()`.
+
+```{r}
+lista <- list("valor" = 89, "vector_num" = 1:3, 
+              "vector_str" = rep(c("a", "b", "c"), 2), 
+              "matriz" = matrix(1:6, nrow = 2))
+lista
+length(lista)
+```
+Sus valores se acceden dados sus nombres, utilizando el operador de extracción `$` o 
+con sus posiciones, usando `[[`
+
+```{r}
+lista$vector_num
+lista[[3]]
+```
+Aunque tengamos una lista que contiene solamente elementos numéricos, no es posible ejecutar 
+funciones sobre ella, ya que estas no están vectorizadas para listas.
+
+```{r error=TRUE}
+lista_num <- list(1:12)
+mean(lista_num)
+```
+
+## Data Frames
+
+Los dataframes son estructuras de datos que se componen de filas y columnas. Es decir, tienen 
+dos dimensiones. Cada columna puede contener un tipo de datos diferente, por lo que son 
+heterogéneos. Podemos pensarlos como una lista especial, donde todos sus elementos 
+son vectores del mismo tamaño. Para crearlos utilizamos la función `data.frame()`
+
+```{r}
+df <- data.frame(dia = sample(c("lu", "ma", "mi", "jueves", "vi"), 6, replace = T),
+                 hora = c(9, 10, 8, 10, 9, 9),
+                 materia = rep(c("español", "matemáticas", "ciencias"), 2), 
+                 tarea = rep(c(TRUE, FALSE, TRUE), 2))
+df
+```
+Para acceder a sus diferentes propiedades
+
+```{r results=FALSE}
+nrow(df)
+# [1] 6
+ncol(df)
+# [1] 4
+dim(df)
+# [1] 6 4
+colnames(df)
+# [1] "dia"     "hora"    "materia" "tarea"  
+```
+
+Si los dataframes son muy grandes, imprimir todos sus valores en pantalla no será práctico. 
+Para ver solamente algunos valores, podemos usar las funciones `head()` y `tail()`. Usaremos
+el dataframe `iris`, ya cargado en R. 
+
+```{r}
+head(iris)
+tail(iris)
+```
+
+## Creando nuestras funciones
+
+Cuando necesitamos programar alguna tarea, que tenemos que realizar múltiples veces, 
+para la cual no existe un función en los  paquetes de R base o en paquetes importados, 
+será necesario que definamos nuestras propias
+funciones. 
+
+Las funciones en R tienen tres componentes: nombre, parámetros y cuerpo. El nombre 
+permite que ejecutemos la función el número de veces que la necesitemos. Los parámetros 
+son las variables que existen dentro de la función y que tomarán el valor de los argumentos 
+con los que esta se llamada y el cuerpo, es el conjunto de operaciones que se realizarán dentro
+de la función. Para declarar una función utilizamos la palabra reservada `function`. Su estructura 
+es la siguiente:
+
+```{r eval=FALSE}
+nombre <- function(argumentos) {
+  cuerpo
+}
+```
+
+Los tres componentes dependen completamente de nosotras, las desarrolladoras, y de la tarea que 
+estemos realizando. Aunque nuestras funciones pueden llegar a ser altamente complejas, la recomendación
+es que una función ejecute solamente una tarea. 
+
+Para definir una función que obtenga el área de un círculo, podemos declarla de esta forma
+
+```{r}
+areaCirculo <- function(radio) {
+  pi * radio^2 #pi es una constante ya definida en R
+}
+```
+
+Y después ejecutarla con múltiples argumentos. 
+
+```{r}
+areaCirculo(10)
+areaCirculo(2)
+```
+Debemos tener en cuenta que en R, las funciones regresan la última instrucción ejecutada, por lo que 
+a veces es conveniente hacer uso explícito de la función `return()`, para indicar que ese es el valor
+que queremos que nuestra función regrese. 
+
+```{r}
+getStats <- function(vec) {
+  mean_v <- mean(vec, na.rm = TRUE)
+  sd_v <- sd(vec, na.rm = TRUE)
+  med_v <- median(vec, na.rm = TRUE)
+  var_v <- var(vec, na.rm = TRUE)
+  na_vals <- sum(is.na(vec))
+  
+  all_stats <- list(media = mean_v, desv = sd_v, 
+                    var = var_v, mediana =  med_v, 
+                    num_nas = na_vals)
+  return(all_stats)
+}
+```
+
+Y la ejecutamos de la misma forma
+
+
+```{r}
+stats1 <- getStats(c(23, 5, 24, 6, 24, NA, 33, 56, NA, 8))
+stats1$num_nas
+```
+
+```{r}
+stats2 <- getStats(1:10)
+stats2$mediana
+```
+
+## Un poco sobre programación
+
+### Condicionales
+
+La instrucción *if, else*, nos permite ejecutar un bloque de código cuando alguna condición se cumple y ejecutar
+un bloque distinto (o no hacer ninguna ejecución) si la condición no se cumple. 
+
+```{r}
+
+imprimir_clima <- function(temp) {
+  if (temp > 27) {
+    print("Hará calor")
+  } else if (temp < 17) {
+     print("Hará frío")
+  } else {
+     print("Estará tempado")
+  }
+}
+  
+imprimir_clima(35)
+imprimir_clima(22)
+imprimir_clima(10)
+```
+Además, también existe una función vectorizada que nos permite evaluar la condición
+sobre un vector. Por ejemplo, para obtener los números divisibles entre 0 o entre 2
+en una muestra.
+
+```{r}
+nums <- sample(1:100, 30)
+ifelse(nums %% 7 == 0 | nums %% 2 == 0 , "divisible", "no divisible")
+```
+
+### Ciclos
+
+Los ciclos son nos permiten ejecutar tareas que tienen que repetirse un número específico 
+de veces o hasta que alguna condición ocurra. Estas estructuras son muy comunes en todos los 
+lenguajes de programación. En R existen tres tipos de ciclos: *for*, *while* y *repeat*. 
+
+> Loops are one of the staples of all programming languages, not just R, 
+and can be a powerful tool (although in our opinion, used far too frequently when writing R code).
+@douglas2022
+
+¿Por qué? Como ya dijimos, a diferencia de otros lenguajes de programación, en R las operaciones están
+vectorizadas, por lo tanto será muy inusual que tengamos que recorrer un arreglo o escribir
+un ciclo para realizar operaciones en los dataframes. 
+
+Los ciclos *for* pueden recorrer un vector de cualquier tipo. La variable que elegimos tomará uno a uno 
+los valores dentro del vector. 
+
+```{r}
+dias <- c("lu", "ma", "mi", "ju", "vi", "sa", "do")
+
+for(d in dias) {
+  print(paste0("Hoy es: ", d))
+}
+
+for(num in seq(2, 20, 2)) {
+  print(num*2)
+}
+```
+ El ciclo *while* requiere que se cumpla una condición lófica para su ejecución, por lo que podemos 
+ utilizarlo cuando no conocemos el número exacto de iteraciones que tienen que tienen que 
+ realizarse. La condición debe regresar un valor lógico, es decir, tiene que ser evaluada a `TRUE` o `FALSE`
+ 
+```{r}
+sum <- -4
+while(sum < 0) {
+ num <- abs(rnorm(1))
+ sum <- sum + num
+ print(sum)
+}
+```
+
+## Guardando datos
+
+
+Aunque muchas veces guardaremos nuestros datos tabulares en archivos de texto plano de tipo 
+*csv* o *tsv*, a veces es conveniente guardar variables que probablemente usaremos después en 
+archivos `*.RData`
+
+```{r eval=FALSE}
+save(mis_valores, file = "data/mis_valores.RData")
+```
+
+O nuestro *workspace* completo
+
+
+```{r eval=FALSE}
+save.image(file = "data/workspace.RData")
+```
+
+Para, en otra ocasión, cargar nuestros datos y retomar nuestro trabajo
+
+```{r eval=FALSE}
+load("data/mis_valores.RData")
+load("data/workspace.RData")
+```
